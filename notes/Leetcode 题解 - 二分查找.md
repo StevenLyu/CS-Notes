@@ -21,7 +21,7 @@ return the index : 2
 ```java
 public int binarySearch(int[] nums, int key) {
     int l = 0, h = nums.length - 1;
-    while (l <= h) {
+    while (l <= h) { 
         int m = l + (h - l) / 2;
         if (nums[m] == key) {
             return m;
@@ -117,22 +117,20 @@ Explanation: The square root of 8 is 2.82842..., and since we want to return an 
 
 ```java
 public int mySqrt(int x) {
-    if (x <= 1) {
-        return x;
-    }
-    int l = 1, h = x;
-    while (l <= h) {
-        int mid = l + (h - l) / 2;
+    if (x <= 1) return x;
+    int l = 1, r = x;
+    // x / t == t
+    while (l <= r) { // when loop break, r < l, so result should be r
+        int mid = l + (r - l) / 2;
         int sqrt = x / mid;
-        if (sqrt == mid) {
-            return mid;
-        } else if (mid > sqrt) {
-            h = mid - 1;
-        } else {
+        if(sqrt == mid) return mid;
+        if(sqrt > mid) { // mid * mid  < x, result should be [mid + 1, r]
             l = mid + 1;
+        } else { // mid * mid > x, result should be [l, mid - 1]
+            r = mid - 1;
         }
     }
-    return h;
+    return r;
 }
 ```
 
@@ -158,17 +156,16 @@ Output: "c"
 
 ```java
 public char nextGreatestLetter(char[] letters, char target) {
-    int n = letters.length;
-    int l = 0, h = n - 1;
-    while (l <= h) {
-        int m = l + (h - l) / 2;
-        if (letters[m] <= target) {
-            l = m + 1;
-        } else {
-            h = m - 1;
+    int l = 0, r = letters.length - 1;
+    while(l <= r) { // when loop break, l > r, l will be the result
+        int mid = l + (r - l) / 2;
+        if(letters[mid] <= target) { // target should be [mid + 1, r]
+            l = mid + 1;
+        } else { // target should be [l, mid]
+            r = mid - 1; 
         }
     }
-    return l < n ? letters[l] : letters[0];
+    return l > letters.length - 1 ? letters[0] : letters[l];
 }
 ```
 
@@ -195,16 +192,20 @@ Output: 2
 
 ```java
 public int singleNonDuplicate(int[] nums) {
-    int l = 0, h = nums.length - 1;
-    while (l < h) {
-        int m = l + (h - l) / 2;
-        if (m % 2 == 1) {
-            m--;   // 保证 l/h/m 都在偶数位，使得查找区间大小一直都是奇数
-        }
-        if (nums[m] == nums[m + 1]) {
-            l = m + 2;
+    // get the middle, check if the incident happened on left or right
+    // mid % 2 == 0, mid = mid - 1; make sure mid is odd
+    // nums[mid] == nums[mid+1] on the left
+    // nums[mid] != nums[mid+1] on the right
+    int l = 0, r = nums.length - 1;
+    while(l < r) {
+        int mid = l + (r-l)/2;
+        if(mid % 2 == 0) mid--;
+        if(nums[mid] == nums[mid+1]) {
+            //element should be between [l, mid-1]
+            r = mid-1;                
         } else {
-            h = m;
+            //element should be between [mid+1, r]
+            l = mid+1;
         }
     }
     return nums[l];
@@ -225,16 +226,18 @@ public int singleNonDuplicate(int[] nums) {
 
 ```java
 public int firstBadVersion(int n) {
-    int l = 1, h = n;
-    while (l < h) {
-        int mid = l + (h - l) / 2;
-        if (isBadVersion(mid)) {
-            h = mid;
+    int l = 1, r = n;
+    while(l < r) { // when loop break, l == r
+        int mid = l + (r-l)/2;
+        if(isBadVersion(mid)) {
+            //if version mid is bad, bad version should be [l,mid]
+            r = mid;
         } else {
+            //if version mid is not bad, bad version should be [mid+1, r]
             l = mid + 1;
         }
     }
-    return l;
+    return r;
 }
 ```
 
@@ -251,16 +254,19 @@ Output: 1
 
 ```java
 public int findMin(int[] nums) {
-    int l = 0, h = nums.length - 1;
-    while (l < h) {
-        int m = l + (h - l) / 2;
-        if (nums[m] <= nums[h]) {
-            h = m;
+    int l = 0, r = nums.length - 1;
+    while (l < r) { // when loop break, l == r, we can reture either
+        int mid = l + (r - l) / 2;
+        if (nums[mid] <= nums[r]) {
+            // target should be [l, mid]
+            r = mid;
         } else {
-            l = m + 1;
+            // target should be [mid + 1, r]
+            l = mid + 1;
+            
         }
     }
-    return nums[l];
+    return nums[r];
 }
 ```
 
@@ -284,25 +290,32 @@ Output: [-1,-1]
 
 ```java
 public int[] searchRange(int[] nums, int target) {
+    int[] result = new int[2];
     int first = findFirst(nums, target);
-    int last = findFirst(nums, target + 1) - 1;
-    if (first == nums.length || nums[first] != target) {
+    int last = findFirst(nums, target+1) - 1;
+    // didn't find: first == size || nums[first] != target
+    if(first == nums.length || nums[first] != target) {
         return new int[]{-1, -1};
-    } else {
+    }
+    // found: first
+    else {
         return new int[]{first, Math.max(first, last)};
     }
 }
 
-private int findFirst(int[] nums, int target) {
-    int l = 0, h = nums.length; // 注意 h 的初始值
-    while (l < h) {
-        int m = l + (h - l) / 2;
-        if (nums[m] >= target) {
-            h = m;
+private int findFirst(int[] nums, int target) { // find the first position or insert position
+    int l = 0, r = nums.length;
+    while (l < r) { // when loop break, l == r
+        int mid = l + (r - l) / 2;
+        if(nums[mid] >= target) {
+            // first target should be [l, mid]
+            r = mid;
         } else {
-            l = m + 1;
+            // first target should be [mid + 1, r]
+            l = mid + 1;
         }
     }
+    // we can return l or r
     return l;
 }
 ```
